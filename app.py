@@ -214,7 +214,7 @@ QUESTION: {question}
 =========
 {summaries}
 =========
-FINAL ANSWER: Let's think step by step."""
+FINAL ANSWER: Here is all I came up with!"""
 
     # Few Shot prompt
     DOC_PROMPT = PromptTemplate(
@@ -272,6 +272,8 @@ def main():
         st.session_state.chat_history = None
     if "disabled" not in st.session_state:
         st.session_state.disabled = True
+    if "user_question" not in st.session_state:
+        st.session_state.user_question = ""
 
     st.header("Analyze multiple PDFs :books:")
 
@@ -298,11 +300,14 @@ def main():
     else:
         user_question = st.text_input(
             "Ask a question about your documents:", 
-            key="unique_key_1"        
+            value=st.session_state.user_question,  # Set the value from the session state
+            key="unique_key_1", 
+            placeholder="You will be able to access this field now that documents have been uploaded!"
         )
-        
+
         if user_question:
             handle_userinput(user_question)
+            st.session_state.user_question = ""
 
 
 
