@@ -13,8 +13,8 @@ css = '''
   width: 20%;
 }
 .chat-message .avatar img {
-  max-width: 78px;
-  max-height: 78px;
+  max-width: 50px;
+  max-height: 50x;
   border-radius: 50%;
   object-fit: cover;
 }
@@ -28,7 +28,7 @@ css = '''
 bot_template = '''
 <div class="chat-message bot">
     <div class="avatar">
-        <img src="https://i.ibb.co/cN0nmSj/Screenshot-2023-05-28-at-02-37-21.png" style="max-height: 78px; max-width: 78px; border-radius: 50%; object-fit: cover;">
+        <img src="https://media.istockphoto.com/id/1091239286/vector/ai-robot-chat-robot-talking-robot-portrait-artwork.jpg?s=612x612&w=0&k=20&c=7NdEP7j86dCkLqiwCgs9QfWRMQ8MhhQsENhwEVwldxE=" style="max-height: 50px; max-width: 50px; border-radius: 50%; object-fit: cover;">
     </div>
     <div class="message">{{MSG}}</div>
 </div>

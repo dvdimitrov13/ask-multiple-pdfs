@@ -1,53 +1,97 @@
 import streamlit as st
-from dotenv import load_dotenv
 from PyPDF2 import PdfReader
+from dotenv import load_dotenv
 from langchain.text_splitter import CharacterTextSplitter
-from langchain.embeddings import OpenAIEmbeddings, HuggingFaceInstructEmbeddings
+from langchain.embeddings import OpenAIEmbeddings, HuggingFaceEmbeddings
 from langchain.vectorstores import FAISS
+from langchain.vectorstores.base import VectorStoreRetriever
 from langchain.chat_models import ChatOpenAI
 from langchain.memory import ConversationBufferMemory
-from langchain.chains import ConversationalRetrievalChain
+from langchain.chains import ConversationalRetrievalChain, LLMChain
+from langchain.prompts.prompt import PromptTemplate
+from langchain.chains.qa_with_sources import load_qa_with_sources_chain
 from htmlTemplates import css, bot_template, user_template
-from langchain.llms import HuggingFaceHub
+from langchain.document_loaders import TextLoader
+
 
 def get_pdf_text(pdf_docs):
-    text = ""
+    # text = ""
+    # for pdf in pdf_docs:
+    #     pdf_reader = PdfReader(pdf)
+    #     for page in pdf_reader.pages:
+    #         text += page.extract_text()
+    return pdf_docs
+
+
+def get_text_chunks(pdf_docs):
+
+    chunks = list()
+
     for pdf in pdf_docs:
+        text = ""
         pdf_reader = PdfReader(pdf)
         for page in pdf_reader.pages:
             text += page.extract_text()
-    return text
 
+        text_splitter = CharacterTextSplitter(        
+            separator = "\n",
+            chunk_size = 500,
+            chunk_overlap  = 100,
+            length_function = len,
+        )
 
-def get_text_chunks(text):
-    text_splitter = CharacterTextSplitter(
-        separator="\n",
-        chunk_size=1000,
-        chunk_overlap=200,
-        length_function=len
-    )
-    chunks = text_splitter.split_text(text)
+        docs = text_splitter.create_documents([text])
+
+        for doc in docs:
+            doc.metadata = {'source': pdf.name}
+            chunks.append(doc)
+
     return chunks
 
 
-def get_vectorstore(text_chunks):
-    embeddings = OpenAIEmbeddings()
-    # embeddings = HuggingFaceInstructEmbeddings(model_name="hkunlp/instructor-xl")
-    vectorstore = FAISS.from_texts(texts=text_chunks, embedding=embeddings)
+def get_vectorstore(docs):
+    model_name = "sentence-transformers/all-MiniLM-L6-v2"
+    model_kwargs = {'device': 'cpu'}
+    encode_kwargs = {'normalize_embeddings': False}
+    hf = HuggingFaceEmbeddings(
+        model_name=model_name,
+        model_kwargs=model_kwargs,
+        encode_kwargs=encode_kwargs
+    )
+    vectorstore = FAISS.from_documents(documents=docs, embedding=hf)
+
+
     return vectorstore
 
 
 def get_conversation_chain(vectorstore):
-    llm = ChatOpenAI()
+    llm = ChatOpenAI(model='gpt-3.5-turbo', temperature=1)
     # llm = HuggingFaceHub(repo_id="google/flan-t5-xxl", model_kwargs={"temperature":0.5, "max_length":512})
 
+    _template = """Given the following conversation and a follow up question, rephrase the follow up question to be a standalone question, in its original language.
+
+    Chat History:
+    {chat_history}
+    Follow Up Input: {question}
+    Standalone question:"""
+    CONDENSE_QUESTION_PROMPT = PromptTemplate.from_template(_template)
+
     memory = ConversationBufferMemory(
-        memory_key='chat_history', return_messages=True)
-    conversation_chain = ConversationalRetrievalChain.from_llm(
-        llm=llm,
-        retriever=vectorstore.as_retriever(),
-        memory=memory
-    )
+        input_key='question', 
+        output_key='answer', 
+        memory_key='chat_history', 
+        return_messages=True)  
+
+    question_generator = LLMChain(llm=llm, prompt=CONDENSE_QUESTION_PROMPT)
+    doc_chain = load_qa_with_sources_chain(llm, chain_type="map_reduce")
+
+    conversation_chain = ConversationalRetrievalChain(
+        retriever=VectorStoreRetriever(vectorstore=vectorstore, search_kwargs={"k":5}),
+        memory=memory,
+        question_generator=question_generator,
+        combine_docs_chain=doc_chain,
+    )  
+
     return conversation_chain
 
 
@@ -66,7 +110,7 @@ def handle_userinput(user_question):
 
 def main():
     load_dotenv()
-    st.set_page_config(page_title="Chat with multiple PDFs",
+    st.set_page_config(page_title="Your helpful AI assistant",
                        page_icon=":books:")
     st.write(css, unsafe_allow_html=True)
 
@@ -75,7 +119,7 @@ def main():
     if "chat_history" not in st.session_state:
         st.session_state.chat_history = None
 
-    st.header("Chat with multiple PDFs :books:")
+    st.header("Analyze multiple PDFs :books:")
     user_question = st.text_input("Ask a question about your documents:")
     if user_question:
         handle_userinput(user_question)
