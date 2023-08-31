@@ -65,6 +65,8 @@ def get_vectorstore(docs):
 
 
 def get_conversation_chain(vectorstore):
+    # TODO: Add logic to maximize the context size dynamically
+
     llm = ChatOpenAI(model='gpt-3.5-turbo', temperature=1)
     # llm = HuggingFaceHub(repo_id="google/flan-t5-xxl", model_kwargs={"temperature":0.5, "max_length":512})
 
@@ -121,7 +123,7 @@ def main():
 
     st.header("Analyze multiple PDFs :books:")
     user_question = st.text_input("Ask a question about your documents:")
-    if user_question:
+    if user_question and st.session_state.conversation:
         handle_userinput(user_question)
 
     with st.sidebar:
