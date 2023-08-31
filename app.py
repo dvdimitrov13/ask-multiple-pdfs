@@ -259,45 +259,52 @@ def handle_userinput(user_question):
             st.write(bot_template.replace(
                 "{{MSG}}", message.content), unsafe_allow_html=True)
 
-
 def main():
     load_dotenv()
     st.set_page_config(page_title="Your helpful AI assistant",
                        page_icon=":books:")
     st.write(css, unsafe_allow_html=True)
 
+    # Initialize session state
     if "conversation" not in st.session_state:
         st.session_state.conversation = None
     if "chat_history" not in st.session_state:
         st.session_state.chat_history = None
+    if "disabled" not in st.session_state:
+        st.session_state.disabled = True
 
     st.header("Analyze multiple PDFs :books:")
-    st.session_state["disabled"] = True
-    user_question = st.text_input("Ask a question about your documents:", placeholder="Make sure to process your documents before proceeding!")
-    if user_question:
-        handle_userinput(user_question)
 
     with st.sidebar:
         st.subheader("Your documents")
         pdf_docs = st.file_uploader(
             "Upload your PDFs here and click on 'Process'", accept_multiple_files=True)
+        
         if st.button("Process"):
             with st.spinner("Processing"):
-                # get pdf text
+                # Your existing processing logic
                 raw_text = get_pdf_text(pdf_docs)
-
-                # get the text chunks
                 text_chunks = get_text_chunks(raw_text)
-
-                # create vector store
                 vectorstore = get_vectorstore(text_chunks)
-
-                # create conversation chain
-                st.session_state.conversation = get_conversation_chain(
-                    vectorstore)
+                st.session_state.conversation = get_conversation_chain(vectorstore)
                 
-                st.session_state["disabled"] = False
+                # Update the session state to enable the text input
+                st.session_state.disabled = False
+                
                 st.success('The processing was successful! Ask away!', icon="✅")
+
+    if st.session_state.disabled:
+        st.write("🔒 Please upload and process your PDFs to unlock the question field.")
+    else:
+        user_question = st.text_input(
+            "Ask a question about your documents:", 
+            key="unique_key_1"        
+        )
+        
+        if user_question:
+            handle_userinput(user_question)
+
+
 
 
 if __name__ == '__main__':
