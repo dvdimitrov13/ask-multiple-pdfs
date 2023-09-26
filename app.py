@@ -27,19 +27,17 @@ def main():
     # Container for chat history
     response_container = chat_placeholder.container()
 
-    with input_placeholder:
-        user_input = st.text_input("Your question!")
+    with input_placeholder.container():
+        with st.form(key='my_form', clear_on_submit=True):
+            user_input = st.text_area("Ask me a question:", key='input', height=50)
+            submit_button = st.form_submit_button(label='Send')
 
-        if user_input:
-            # Clear the text input
-            st.text_input("Your question!", value="", key="reset")
-            
+        if submit_button and user_input:
             # Get the bot's response
             bot_response = EYPoliciesLookupAgent(user_input)
             
             st.session_state['past'].append(user_input)
             st.session_state['generated'].append(bot_response)
-        
 
     if st.session_state['generated']:
         with response_container:

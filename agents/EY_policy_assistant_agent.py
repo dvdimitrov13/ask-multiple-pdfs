@@ -1,4 +1,5 @@
 import os
+from langchain.load.dump import dumps
 from langchain.memory import ConversationBufferMemory
 from langchain.agents import initialize_agent, Tool
 from langchain.agents import AgentType
@@ -20,7 +21,7 @@ You are currently interacting with EY's Internal Policies Assistant. It is imper
 
     llm = AzureChatOpenAI(deployment_name="gpt-4", model_name="gpt-4", temperature=0.5)
 
-    memory = ConversationBufferMemory(memory_key="chat_history", return_messages=True)
+    memory = ConversationBufferMemory(memory_key="chat_history", output_key='output', return_messages=True)
 
     pdf_docs = [
         os.path.join("./EYPolicies/", filename)
@@ -37,7 +38,7 @@ You are currently interacting with EY's Internal Policies Assistant. It is imper
         Tool(
             name="EY-internal-policies",
             func=chain.run,
-            description="useful for quering EY internal policies and guidelines, returns a summary of documents relevant to the query with sources, query should be formatted as a question",
+            description="useful for quering EY internal policies and guidelines",
         )
     ]
 
@@ -49,6 +50,8 @@ You are currently interacting with EY's Internal Policies Assistant. It is imper
         memory=memory,
         handle_parsing_errors=True,
         agent_kwargs={"system_message": PREFIX},  # here
+        return_intermediate_steps=True,
     )
 
-    return agent.run(question)
+    response = agent({'input': question})
+    return response['chat_history'][-1].content, response["intermediate_steps"]
