@@ -38,7 +38,7 @@ You are currently interacting with EY's Internal Policies Assistant. It is imper
         Tool(
             name="EY-internal-policies",
             func=chain.run,
-            description="useful for quering EY internal policies and guidelines",
+            description="useful for quering EY internal policies and guidelines, returns a summary of documents relevant to the query with sources, query should be formatted as a question",
         )
     ]
 
@@ -54,4 +54,4 @@ You are currently interacting with EY's Internal Policies Assistant. It is imper
     )
 
     response = agent({'input': question})
-    return response['chat_history'][-1].content, response["intermediate_steps"]
+    return response['chat_history'][-1].content
