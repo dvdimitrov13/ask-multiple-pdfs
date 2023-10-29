@@ -1,5 +1,5 @@
 from langchain.vectorstores.base import VectorStoreRetriever
-from langchain.memory import ConversationBufferMemory, ReadOnlySharedMemory
+from langchain.memory import ReadOnlySharedMemory
 from langchain.chains import ConversationalRetrievalChain, LLMChain
 from langchain.prompts.prompt import PromptTemplate
 from langchain.chains.qa_with_sources import load_qa_with_sources_chain
@@ -11,10 +11,10 @@ from templates import chain_templates
 
 llm = AzureChatOpenAI(deployment_name="gpt-4", model_name="gpt-4", temperature=0)
 llm_creative = AzureChatOpenAI(
-    deployment_name="gpt-4", model_name="gpt-4", temperature=1
+    deployment_name="gpt-4", model_name="gpt-4", temperature=0.7
 )
 
-verbose = True
+verbose = False
 
 
 def get_condense_question_chain():
@@ -22,7 +22,7 @@ def get_condense_question_chain():
         chain_templates.condense_question
     )
 
-    return LLMChain(llm=llm, prompt=CONDENSE_QUESTION_PROMPT, verbose=verbose)
+    return LLMChain(llm=llm_creative, prompt=CONDENSE_QUESTION_PROMPT, verbose=verbose)
 
 
 def get_document_map_reduce_chain():
@@ -60,3 +60,17 @@ def get_conversational_retrieval_chain(vectorstore, memory, retrieved_docs=5):
         combine_docs_chain=get_document_map_reduce_chain(),
         verbose=verbose,
     )
+
+def agent_memory():
+    
+    DEFAULT_TEMPLATE = """The following is a friendly conversation between a human and an AI. The AI is talkative and provides lots of specific details from its context. If the AI does not know the answer to a question, it truthfully says it does not know.
+
+    Current conversation:
+    {history}
+    Human: {input}
+    AI:"""
+    PROMPT = PromptTemplate(input_variables=["history", "input"], template=DEFAULT_TEMPLATE)
+    
+
+
+

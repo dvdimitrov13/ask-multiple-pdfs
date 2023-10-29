@@ -1,4 +1,4 @@
-condense_question = """Given the following conversation and a follow up query, rephrase the follow up query to be a standalone query.
+condense_question = """Given the following conversation and a follow up query, rephrase the follow up query into a short description of the information that needs to be found.
 
 Chat History:
 {chat_history}

@@ -15,8 +15,8 @@ def process_pdf(pdf_docs):
 
         text_splitter = CharacterTextSplitter(        
             separator = "\n",
-            chunk_size = 5000,
-            chunk_overlap  = 500,
+            chunk_size = 1000,
+            chunk_overlap  = 200,
             length_function = len,
         )
 

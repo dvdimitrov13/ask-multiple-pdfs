@@ -2,8 +2,10 @@ from dotenv import load_dotenv
 load_dotenv()
 
 import streamlit as st
+import json
 from streamlit_chat import message
-from agents.EY_policy_assistant_agent import EYPoliciesLookupAgent
+from langchain.load.dump import dumps
+from agents.EY_policy_assistant_agent import EYPoliciesLookupAgentClass
 
 
 # import langchain
@@ -12,9 +14,11 @@ from agents.EY_policy_assistant_agent import EYPoliciesLookupAgent
 
 def main():
     st.set_page_config(page_title="Your helpful AI assistant", page_icon=":books:")
-    st.header('EY Internal Policies Assitant :books:')
+    st.header('EY Internal Policies Assistant :books:')
 
     # Initialize the session state for chat history
+    if 'agent' not in st.session_state:
+        st.session_state['agent'] = EYPoliciesLookupAgentClass()
     if 'past' not in st.session_state:
         st.session_state['past'] = []
     if 'generated' not in st.session_state:
@@ -34,10 +38,24 @@ def main():
 
         if submit_button and user_input:
             # Get the bot's response
-            bot_response = EYPoliciesLookupAgent(user_input)
-            
+            bot_response = st.session_state['agent'].run(user_input)
+
+            # Extract and pretty-print the intermediate steps
+            intermediate_steps = bot_response["intermediate_steps"]
+
+            bot_reply = ''
+
+            for step, observation in intermediate_steps:
+                bot_reply += step.log
+
+
+            bot_reply += 'Final Answer: \n' + bot_response['output']
+
+            # Append the user's question to the chat history
             st.session_state['past'].append(user_input)
-            st.session_state['generated'].append(bot_response)
+
+            # Append the intermediate steps and the final reply to the chat history
+            st.session_state['generated'].append(bot_reply)
 
     if st.session_state['generated']:
         with response_container:
